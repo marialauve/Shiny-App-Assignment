@@ -1,0 +1,175 @@
+---
+title: "Manipulate a Model by Selecting Data Points from the Iris Data Set"
+author: "Maria Lauve"
+date: "August 24, 2017"
+output: ioslides_presentation
+---
+
+<style>
+.title-slide {
+    background-color: #deebf7
+}
+.title-slide hgroup > h1{
+ color: #800000; 
+}
+slides > slide.title-slide p {
+  color: #2c7fb8;
+}
+</style>
+
+## Introduction to the Iris App
+
+<style>
+slide:not(.segue) h2{color: #800000}
+slides > slide {
+    background-color: #deebf7
+</style>
+
+<div class=blue3>
+- The Iris app allows the user to experiment with manipulating a model that describes the relationship between the **Sepal Length** and **Petal Length** of Irises.
+- The user can see how the relationship *changes* depending on the set of data points selected.
+- The data points are color-coded by Species to allow the user to test whether the relationship between Sepal Length and Sepal Width changes depending on the species of the plant.
+- The following slides contain an *interactive view of the app*, as well as *screenshots of the code* used to generate it.
+</div>
+
+## The Iris App
+
+```{r, echo=FALSE}
+library(shiny)
+
+shinyApp(
+  
+ ui = fluidPage(
+    titlePanel("Select Data Points to Visualize a Model"),
+    sidebarLayout(
+        sidebarPanel(
+            h3("Slope"),
+            textOutput("slopeOut"),
+            h3("Intercept"),
+            textOutput("intOut")
+        ),
+        mainPanel(
+            plotOutput("plot1", brush = brushOpts(
+                id = "brush1"
+            ))
+        )
+    )
+),
+
+    server = function(input, output) {
+    model <- reactive({
+        brushed_data <- brushedPoints(iris, input$brush1,
+                                      xvar = "Sepal.Length", yvar = "Petal.Length")
+        if(nrow(brushed_data) < 2){
+            return(NULL)
+        }
+        lm(Petal.Length ~ Sepal.Length, data = brushed_data)
+    })
+    
+    output$slopeOut <- renderText({
+        if(is.null(model())){
+            "No Model Found"
+        } else {
+            model()[[1]][2]
+        }
+    })
+
+        output$intOut <- renderText({
+        if(is.null(model())){
+            "No Model Found"
+        } else {
+            model()[[1]][1]
+        }
+    })
+    
+    output$plot1 <- renderPlot({
+        plot(iris$Sepal.Length, iris$Petal.Length, xlab = "Sepal Length",
+             ylab = "Petal Length", main = "Iris Measurements",
+             cex = 1.5, pch = 16, bty = "n", col = factor(iris$Species))
+        legend(list(x = 6.75, y = 3), c("Setosa", "Versicolor", "Verginica"),
+               pch = 19, col=1:3)
+            if(!is.null(model())){
+            abline(model(), col = "blue", lwd = 2)
+        }
+    })
+})
+
+```
+
+## ui.R code {.smaller}
+
+```{r, eval=FALSE}
+library(shiny)
+
+shinyUI(fluidPage(
+    titlePanel("Select Data Points to Visualize a Model"),
+    sidebarLayout(
+        sidebarPanel(
+            h3("Slope"),
+            textOutput("slopeOut"),
+            h3("Intercept"),
+            textOutput("intOut")
+        ),
+        mainPanel(
+            plotOutput("plot1", brush = brushOpts(
+                id = "brush1"
+            ))
+        )
+    )
+))
+```
+
+## server.R code {.smaller}
+
+<style>
+.slide {
+    /*margin-top: -25px;
+    margin-bottom: -25px*/
+    padding: 5px 40px
+}
+</style>
+
+```{r, eval=FALSE}
+library(shiny)
+shinyServer(function(input, output) {
+    model <- reactive({
+        brushed_data <- brushedPoints(iris, input$brush1,
+                xvar = "Sepal.Length", yvar = "Petal.Length")
+        if(nrow(brushed_data) < 2){return(NULL)}
+        lm(Petal.Length ~ Sepal.Length, data = brushed_data)
+    })
+    output$slopeOut <- renderText({
+        if(is.null(model())){"No Model Found"}
+            else {model()[[1]][2]}
+    })
+        output$intOut <- renderText({
+        if(is.null(model())){"No Model Found"}
+            else {model()[[1]][1]}
+    })
+    output$plot1 <- renderPlot({
+        plot(iris$Sepal.Length, iris$Petal.Length, xlab = "Sepal Length",
+             ylab = "Petal Length", main = "Iris Measurements",
+             cex = 1.5, pch = 16, bty = "n", col = factor(iris$Species))
+        legend(list(x = 6.75, y = 3), c("Setosa", "Versicolor","Verginica"),
+             pch = 19, col=1:3)
+            if(!is.null(model())){abline(model(), col = "blue", lwd = 2)}
+    })
+})
+```
+        
+
+```{r, echo=FALSE}
+# RSconnect login:
+# https://www.shinyapps.io/admin/#/login
+
+# Run the following lines to post app to host server
+#library(rsconnect)
+#rsconnect::deployApp('./IrisApp')
+
+# Shiny server URL for Shiny App
+#https://mvl-coursera.shinyapps.io/irisapp/
+
+# Github URL for presentation slides
+#https://marialauve.github.io/Shiny-App-Assignment/IrisPresentation.html#1
+    
+```
